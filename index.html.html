@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Automata Solid - Casa de Animación Cinematográfica 3D &amp; 2D</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Bebas Neue para títulos de cine + Plus Jakarta Sans + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    // Configuración de paleta neo-noir y tipografías cinematográficas en Tailwind
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            abyss: '#050608',
+            charcoal: '#0B0D12',
+            slateDark: '#12151E',
+            amberFlare: '#FF5E1A',
+            amberWarm: '#FF9E44',
+            iceCyan: '#38BDF8',
+            silverFilm: '#E2E8F0',
+          },
+          fontFamily: {
+            cinema: ['Bebas Neue', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* Base oscura de sala de proyección */
+    body {
+      background-color: #050608;
+      color: #E2E8F0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Textura sutil de grano de película analógica */
+    .film-grain {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 0);
+      background-size: 3px 3px;
+      pointer-events: none;
+    }
+
+    /* Viñeteado radial cinematográfico */
+    .cinema-vignette {
+      background: radial-gradient(circle at center, transparent 45%, rgba(3, 4, 6, 0.88) 100%);
+      pointer-events: none;
+    }
+
+    /* Destello horizontal de lente anamórfica (ámbar + cian) */
+    .anamorphic-flare {
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(56, 189, 248, 0.18) 25%,
+        rgba(255, 94, 26, 0.72) 50%,
+        rgba(56, 189, 248, 0.18) 75%,
+        transparent 100%
+      );
+      height: 1px;
+    }
+
+    .anamorphic-flare-cyan {
+      background: linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, 0.75) 50%, transparent 100%);
+      height: 1px;
+    }
+
+    /* Contenedor tipo fotograma / monitor de montaje */
+    .cinema-frame {
+      background: linear-gradient(180deg, rgba(14, 17, 24, 0.92) 0%, rgba(8, 10, 14, 0.96) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .cinema-frame:hover {
+      border-color: rgba(255, 94, 26, 0.45);
+      box-shadow: 0 30px 60px -15px rgba(255, 94, 26, 0.14);
+      transform: translateY(-3px);
+    }
+
+    /* Relación de aspecto panorámica 2.39:1 con respaldo 16:9 en pantallas estrechas */
+    .aspect-anamorphic {
+      aspect-ratio: 2.39 / 1;
+    }
+
+    @media (max-width: 640px) {
+      .aspect-anamorphic {
+        aspect-ratio: 16 / 9;
+      }
+    }
+
+    /* Guías de encuadre de cámara cinematográfica */
+    .cam-guide {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-color: rgba(226, 232, 240, 0.45);
+      pointer-events: none;
+    }
+
+    .cg-tl {
+      top: 12px;
+      left: 12px;
+      border-top: 1px solid;
+      border-left: 1px solid;
+    }
+
+    .cg-tr {
+      top: 12px;
+      right: 12px;
+      border-top: 1px solid;
+      border-right: 1px solid;
+    }
+
+    .cg-bl {
+      bottom: 12px;
+      left: 12px;
+      border-bottom: 1px solid;
+      border-left: 1px solid;
+    }
+
+    .cg-br {
+      bottom: 12px;
+      right: 12px;
+      border-bottom: 1px solid;
+      border-right: 1px solid;
+    }
+
+    /* Slider de duración estilo consola de producción */
+    input[type='range'] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #161A24;
+      height: 4px;
+      border-radius: 999px;
+      outline: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #FF5E1A;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(255, 94, 26, 0.8);
+      border: 2px solid #050608;
+    }
+
+    input[type='range']::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #FF5E1A;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(255, 94, 26, 0.8);
+      border: 2px solid #050608;
+    }
+
+    /* Modo Sala de Cine: atenúa el entorno para destacar el visor panorámico */
+    body.theater-active header,
+    body.theater-active #filmografia,
+    body.theater-active #pipeline,
+    body.theater-active #cotizador,
+    body.theater-active #creditos,
+    body.theater-active footer,
+    body.theater-active .hero-copy-col {
+      opacity: 0.08;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+
+    body.theater-active #theater-exit-banner {
+      display: flex;
+    }
+  </style>
+</head>
+<body class="relative min-h-screen selection:bg-amberFlare selection:text-white">
+  <!-- Capas de grano fílmico y viñeteado en pantalla completa -->
+  <div class="fixed inset-0 film-grain z-40"></div>
+  <div class="fixed inset-0 cinema-vignette z-30"></div>
+
+  <!-- Banner flotante para salir del Modo Sala de Cine -->
+  <div id="theater-exit-banner" class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-50 items-center gap-4 px-5 py-2.5 rounded-full bg-charcoal/95 border border-amberFlare/50 backdrop-blur-md shadow-2xl">
+    <span class="font-mono text-xs text-amberWarm tracking-widest uppercase">MODO SALA DE CINE // 2.39:1 ANAMORPHIC</span>
+    <button type="button" onclick="toggleTheaterMode()" class="px-3 py-1 rounded-full bg-amberFlare text-white font-mono text-xs font-semibold hover:bg-amberWarm transition-colors">
+      Encender Luces
+    </button>
+  </div>
+
+  <!-- Contenedor de notificaciones toast -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+  <!-- 1. CABECERA DE ESTUDIO CINEMATOGRÁFICO -->
+  <header class="sticky top-0 z-30 bg-abyss/80 backdrop-blur-xl border-b border-white/[0.06] transition-opacity duration-500">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20">
+        <!-- Identidad del estudio + edición en vivo del nombre -->
+        <div class="flex items-center gap-3.5">
+          <div class="w-8 h-8 rounded border border-amberFlare/60 bg-charcoal flex items-center justify-center relative overflow-hidden">
+            <div class="w-3 h-3 rounded-full bg-amberFlare blur-[2px] absolute"></div>
+            <span class="relative font-cinema text-sm tracking-widest text-white">2.39</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <a href="#" id="studio-name-display" class="font-cinema text-2xl sm:text-3xl tracking-[0.18em] text-white hover:text-amberWarm transition-colors">
+              AUTOMATA SOLID
+            </a>
+            <button type="button" onclick="openNameModal()" title="Cambiar nombre del estudio en tiempo real" class="px-2.5 py-1 rounded bg-white/[0.04] border border-white/10 hover:border-amberFlare/60 text-slate-400 hover:text-amberWarm transition-all flex items-center gap-1.5 text-[11px] font-mono">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              <span>Editar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Navegación principal -->
+        <nav class="hidden lg:flex items-center gap-8 font-mono text-[11px] tracking-[0.2em] uppercase text-slate-400">
+          <a href="#reel" class="hover:text-white transition-colors">I. Showreel</a>
+          <a href="#filmografia" class="hover:text-white transition-colors">II. Filmografía</a>
+          <a href="#pipeline" class="hover:text-white transition-colors">III. Pipeline</a>
+          <a href="#cotizador" class="hover:text-white transition-colors">IV. Presupuesto</a>
+          <a href="#creditos" class="hover:text-white transition-colors">V. Contacto</a>
+        </nav>
+
+        <!-- Telemetría de cuadro y acceso rápido al cotizador -->
+        <div class="flex items-center gap-3">
+          <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded bg-charcoal/90 border border-white/[0.07] font-mono text-[10px] text-slate-400 tracking-wider">
+            <span class="w-1.5 h-1.5 rounded-full bg-amberFlare animate-pulse"></span>
+            <span id="hud-timecode">24FPS // 01:00:00:00</span>
+          </div>
+          <a href="#cotizador" class="px-4 py-2 rounded bg-amberFlare hover:bg-amberWarm text-white font-mono text-xs font-semibold tracking-wider uppercase transition-all shadow-lg shadow-amberFlare/20">
+            Iniciar Proyecto
+          </a>
+          <button type="button" onclick="toggleMobileMenu()" aria-label="Abrir menú" class="lg:hidden p-2 rounded bg-charcoal border border-white/10 text-slate-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menú desplegable para móviles -->
+    <div id="mobile-menu" class="hidden lg:hidden bg-charcoal border-b border-white/10 px-4 py-4 space-y-2 font-mono text-xs tracking-widest uppercase">
+      <a href="#reel" onclick="toggleMobileMenu()" class="block py-2 px-3 rounded hover:bg-white/5 text-slate-200">I. Showreel 2.39:1</a>
+      <a href="#filmografia" onclick="toggleMobileMenu()" class="block py-2 px-3 rounded hover:bg-white/5 text-slate-200">II. Filmografía</a>
+      <a href="#pipeline" onclick="toggleMobileMenu()" class="block py-2 px-3 rounded hover:bg-white/5 text-slate-200">III. Pipeline de Producción</a>
+      <a href="#cotizador" onclick="toggleMobileMenu()" class="block py-2 px-3 rounded hover:bg-white/5 text-amberWarm">IV. Presupuesto</a>
+      <a href="#creditos" onclick="toggleMobileMenu()" class="block py-2 px-3 rounded hover:bg-white/5 text-slate-200">V. Créditos &amp; Contacto</a>
+    </div>
+  </header>
+
+  <main class="relative z-10">
+    <!-- 2. HERO CINEMATOGRÁFICO + VISOR ANAMÓRFICO -->
+    <section id="reel" class="pt-10 pb-20 sm:pt-14 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div class="hero-copy-col text-center max-w-4xl mx-auto mb-10 sm:mb-12 space-y-4 transition-opacity duration-500">
+        <div class="inline-flex items-center gap-3 font-mono text-[11px] tracking-[0.28em] uppercase text-iceCyan/90">
+          <span>3D CGI</span>
+          <span class="text-amberFlare">•</span>
+          <span>2D HAND-DRAWN</span>
+          <span class="text-amberFlare">•</span>
+          <span>NEO-NOIR CYBERPUNK</span>
+        </div>
+
+        <h1 class="font-cinema text-5xl sm:text-7xl lg:text-8xl tracking-[0.08em] leading-[0.95] text-white">
+          NARRATIVA VISUAL DE <span class="text-transparent bg-clip-text bg-gradient-to-r from-amberFlare via-amberWarm to-iceCyan">ALTO IMPACTO</span>
+        </h1>
+
+        <p class="text-slate-400 text-sm sm:text-lg max-w-2xl mx-auto font-light leading-relaxed">
+          <strong class="studio-name-text text-slate-200 font-medium">AUTOMATA SOLID</strong> fusiona iluminación volumétrica 3D, óptica anamórfica y animación 2D expresiva para trailers cinematográficos, videoclips y universos originales.
+        </p>
+      </div>
+
+      <!-- Visor cinematográfico panorámico con selector de pases -->
+      <div class="cinema-frame rounded-2xl p-2.5 sm:p-4 relative">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-3 border-b border-white/[0.07] font-mono text-[11px]">
+          <div class="flex items-center gap-3">
+            <span class="px-2 py-0.5 rounded bg-amberFlare/15 border border-amberFlare/40 text-amberWarm font-semibold">
+              REEL_MASTER_ACEScg
+            </span>
+            <span class="text-slate-400 hidden sm:inline">35MM ANAMORPHIC · F/1.4 · 24.00 FPS</span>
+          </div>
+
+          <!-- Selector de pases: Final Grade, 3D Clay & Light, 2D Ink Pass -->
+          <div class="flex items-center gap-1.5 bg-abyss p-1 rounded-lg border border-white/10">
+            <button type="button" onclick="setReelLayer('final')" id="layer-final" class="px-3 py-1 rounded text-[11px] font-semibold bg-amberFlare text-white transition-all">
+              Final Grade
+            </button>
+            <button type="button" onclick="setReelLayer('clay')" id="layer-clay" class="px-3 py-1 rounded text-[11px] text-slate-400 hover:text-white transition-all">
+              3D Clay &amp; Light
+            </button>
+            <button type="button" onclick="setReelLayer('ink')" id="layer-ink" class="px-3 py-1 rounded text-[11px] text-slate-400 hover:text-white transition-all">
+              2D Ink Pass
+            </button>
+          </div>
+        </div>
+
+        <!-- Pantalla 2.39:1 con barras letterbox y guías de cámara -->
+        <div class="relative w-full aspect-anamorphic rounded-xl overflow-hidden bg-abyss border border-white/10 shadow-inner">
+          <canvas id="cinema-reel-canvas" class="w-full h-full block"></canvas>
+
+          <div class="absolute top-0 inset-x-0 h-3 sm:h-4 bg-black/90 pointer-events-none"></div>
+          <div class="absolute bottom-0 inset-x-0 h-3 sm:h-4 bg-black/90 pointer-events-none"></div>
+
+          <div class="cam-guide cg-tl"></div>
+          <div class="cam-guide cg-tr"></div>
+          <div class="cam-guide cg-bl"></div>
+          <div class="cam-guide cg-br"></div>
+
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
+            <div class="w-4 h-[1px] bg-white"></div>
+            <div class="h-4 w-[1px] bg-white -ml-2"></div>
+          </div>
+
+          <div id="reel-pass-label" class="absolute top-6 left-6 font-mono text-[10px] sm:text-xs tracking-widest text-amberWarm/90 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded border border-white/10 pointer-events-none">
+            LUT: KODAK 2383 // COMPOSITE 3D+2D
+          </div>
+
+          <div class="absolute bottom-6 right-6 font-mono text-[10px] text-slate-300/80 bg-black/60 px-2.5 py-1 rounded pointer-events-none hidden sm:block">
+            ASPECT RATIO 2.39:1 SCOPE
+          </div>
+        </div>
+
+        <!-- Controles de reproducción y Modo Sala de Cine -->
+        <div class="mt-3.5 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3 flex-1 min-w-[220px]">
+            <button type="button" onclick="toggleReelPlay()" class="p-2.5 rounded-lg bg-white/[0.06] hover:bg-amberFlare text-white transition-colors" title="Reproducir / Pausar">
+              <svg id="icon-pause" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+              </svg>
+              <svg id="icon-play" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </button>
+
+            <div class="flex-1">
+              <div class="flex justify-between font-mono text-[10px] text-slate-400 mb-1">
+                <span>TIMELINE // ESCENA_04_LLUVIA_NEON</span>
+                <span id="reel-frame-counter">FR 001 / 360</span>
+              </div>
+              <div class="w-full h-1.5 bg-abyss rounded-full overflow-hidden border border-white/10">
+                <div id="reel-progress-bar" class="h-full bg-gradient-to-r from-amberFlare via-amberWarm to-iceCyan w-0"></div>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" onclick="toggleTheaterMode()" class="px-3.5 py-2 rounded-lg bg-charcoal border border-white/15 hover:border-iceCyan text-slate-200 hover:text-iceCyan font-mono text-xs flex items-center gap-2 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <span>Modo Sala de Cine</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Destello anamórfico separador -->
+      <div class="anamorphic-flare w-full mt-20 opacity-70"></div>
+    </section>
+
+    <!-- 3. FILMOGRAFÍA SELECCIONADA (GALERÍA FILTRABLE) -->
+    <section id="filmografia" class="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto transition-opacity duration-500">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <span class="font-mono text-xs tracking-[0.25em] text-amberWarm uppercase">// ARCHIVO DE PRODUCCIONES</span>
+          <h2 class="font-cinema text-4xl sm:text-6xl tracking-wider text-white mt-1">FILMOGRAFÍA SELECCIONADA</h2>
+        </div>
+
+        <!-- Botones de filtro por disciplina -->
+        <div class="flex flex-wrap gap-2" id="portfolio-filters">
+          <button type="button" onclick="filterPortfolio('all')" data-filter="all" class="filter-btn px-4 py-2 rounded font-mono text-xs font-semibold bg-amberFlare text-white transition-all">
+            Todas las Piezas
+          </button>
+          <button type="button" onclick="filterPortfolio('hybrid')" data-filter="hybrid" class="filter-btn px-4 py-2 rounded font-mono text-xs bg-charcoal border border-white/10 text-slate-300 hover:border-amberFlare/50 transition-all">
+            Híbrido 3D+2D
+          </button>
+          <button type="button" onclick="filterPortfolio('3d')" data-filter="3d" class="filter-btn px-4 py-2 rounded font-mono text-xs bg-charcoal border border-white/10 text-slate-300 hover:border-amberFlare/50 transition-all">
+            Cinemáticas 3D
+          </button>
+          <button type="button" onclick="filterPortfolio('2d')" data-filter="2d" class="filter-btn px-4 py-2 rounded font-mono text-xs bg-charcoal border border-white/10 text-slate-300 hover:border-amberFlare/50 transition-all">
+            Anime / Cel-Shading
+          </button>
+          <button type="button" onclick="filterPortfolio('vfx')" data-filter="vfx" class="filter-btn px-4 py-2 rounded font-mono text-xs bg-charcoal border border-white/10 text-slate-300 hover:border-amberFlare/50 transition-all">
+            VFX &amp; LookDev
+          </button>
+        </div>
+      </div>
+
+      <!-- Grid poblado dinámicamente desde JS -->
+      <div id="portfolio-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+    </section>
+
+    <!-- 4. PIPELINE DE PRODUCCIÓN -->
+    <section id="pipeline" class="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/[0.07] transition-opacity duration-500">
+      <div class="max-w-3xl mb-14">
+        <span class="font-mono text-xs tracking-[0.25em] text-iceCyan uppercase">// ARQUITECTURA DE PRODUCCIÓN</span>
+        <h2 class="font-cinema text-4xl sm:text-6xl tracking-wider text-white mt-1">PIPELINE DEL ESTUDIO</h2>
+        <p class="text-slate-400 mt-3 text-sm sm:text-base font-light leading-relaxed">
+          Trabajamos con estándares de cine y videojuegos de gama alta, integrando dirección de arte conceptual, animación híbrida y composición final en espacio de color ACEScg.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Fase 01 -->
+        <div class="cinema-frame rounded-2xl p-7 flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute top-0 right-0 font-cinema text-8xl text-white/[0.03] leading-none select-none pointer-events-none">01</div>
+          <div>
+            <div class="font-mono text-xs text-amberWarm tracking-widest mb-3">FASE 01 // DESARROLLO</div>
+            <h3 class="font-cinema text-3xl tracking-wide text-white mb-3">PRE-PRODUCCIÓN &amp; DIRECCIÓN DE ARTE</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+              Construimos el lenguaje visual desde cero: diseño de personajes cyberpunk, arquitectura neo-noir, color scripts, storyboards cinematográficos y animatics con ritmo musical.
+            </p>
+          </div>
+          <div class="pt-4 border-t border-white/[0.07] space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex justify-between"><span>• Concept Art &amp; Keyframes</span><span class="text-amberFlare">INCLUDED</span></div>
+            <div class="flex justify-between"><span>• Storyboard &amp; Animatic 2D</span><span class="text-amberFlare">INCLUDED</span></div>
+            <div class="flex justify-between"><span>• Diseño de Personajes / Mechas</span><span class="text-amberFlare">INCLUDED</span></div>
+          </div>
+        </div>
+
+        <!-- Fase 02 -->
+        <div class="cinema-frame rounded-2xl p-7 flex flex-col justify-between relative overflow-hidden border-amberFlare/30">
+          <div class="absolute top-0 right-0 font-cinema text-8xl text-white/[0.03] leading-none select-none pointer-events-none">02</div>
+          <div>
+            <div class="font-mono text-xs text-iceCyan tracking-widest mb-3">FASE 02 // PRODUCCIÓN HÍBRIDA</div>
+            <h3 class="font-cinema text-3xl tracking-wide text-white mb-3">ANIMACIÓN 3D + TRAZO 2D</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+              Nuestro sello distintivo: cámaras 3D dinámicas, modelado hard-surface y rigging combinados con animación cuadro a cuadro, smear frames, humo estilizado e impactos de energía dibujados a mano.
+            </p>
+          </div>
+          <div class="pt-4 border-t border-white/[0.07] space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex justify-between"><span>• Blender / Unreal Engine 5</span><span class="text-iceCyan">3D CORE</span></div>
+            <div class="flex justify-between"><span>• Toon Boom / Grease Pencil</span><span class="text-iceCyan">2D INK</span></div>
+            <div class="flex justify-between"><span>• Simulación de Ropa &amp; Partículas</span><span class="text-iceCyan">FX SIM</span></div>
+          </div>
+        </div>
+
+        <!-- Fase 03 -->
+        <div class="cinema-frame rounded-2xl p-7 flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute top-0 right-0 font-cinema text-8xl text-white/[0.03] leading-none select-none pointer-events-none">03</div>
+          <div>
+            <div class="font-mono text-xs text-amberWarm tracking-widest mb-3">FASE 03 // POST-PRODUCCIÓN</div>
+            <h3 class="font-cinema text-3xl tracking-wide text-white mb-3">LOOKDEV, ILUMINACIÓN &amp; COMPOSITING</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-6">
+              Atmósfera volumétrica, lluvia, reflejos anamórficos, aberración cromática controlada, etalonaje cinematográfico y diseño sonoro envolvente listo para estreno en cines o plataformas.
+            </p>
+          </div>
+          <div class="pt-4 border-t border-white/[0.07] space-y-1.5 font-mono text-xs text-slate-300">
+            <div class="flex justify-between"><span>• Nuke / After Effects / DaVinci</span><span class="text-amberWarm">FINISH</span></div>
+            <div class="flex justify-between"><span>• Master 4K DCI / 2.39:1 Scope</span><span class="text-amberWarm">MASTER</span></div>
+            <div class="flex justify-between"><span>• Adaptaciones Verticales 9:16</span><span class="text-amberWarm">SOCIAL</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. COTIZADOR INTERACTIVO DE PRODUCCIÓN -->
+    <section id="cotizador" class="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/[0.07] transition-opacity duration-500">
+      <div class="mb-12">
+        <span class="font-mono text-xs tracking-[0.25em] text-amberFlare uppercase">// ESTIMACIÓN DE PRESUPUESTO</span>
+        <h2 class="font-cinema text-4xl sm:text-6xl tracking-wider text-white mt-1">CALCULADORA DE PRODUCCIÓN</h2>
+        <p class="text-slate-400 mt-2 text-sm sm:text-base font-light">
+          Configura los parámetros técnicos de tu pieza para obtener una estimación inmediata de inversión y calendario de entrega.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Controles de configuración -->
+        <div class="lg:col-span-7 cinema-frame rounded-2xl p-6 sm:p-8 space-y-8">
+          <div>
+            <label class="block font-mono text-xs uppercase tracking-widest text-slate-300 mb-3">01. Técnica Cinematográfica</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button type="button" onclick="selectQuoteStyle('2d', 70)" data-style="2d" class="quote-style-btn p-4 rounded-xl border text-left transition-all bg-charcoal border-white/10 hover:border-amberFlare/50">
+                <div class="font-cinema text-xl tracking-wide text-white">2D ANIME / CEL</div>
+                <div class="font-mono text-[11px] text-slate-400 mt-0.5">Trazo cuadro a cuadro</div>
+                <div class="font-mono text-xs text-amberWarm mt-2">$70 / seg</div>
+              </button>
+
+              <button type="button" onclick="selectQuoteStyle('3d', 95)" data-style="3d" class="quote-style-btn p-4 rounded-xl border text-left transition-all bg-charcoal border-white/10 hover:border-amberFlare/50">
+                <div class="font-cinema text-xl tracking-wide text-white">CINEMÁTICA 3D</div>
+                <div class="font-mono text-[11px] text-slate-400 mt-0.5">CGI &amp; luz volumétrica</div>
+                <div class="font-mono text-xs text-amberWarm mt-2">$95 / seg</div>
+              </button>
+
+              <button type="button" onclick="selectQuoteStyle('hybrid', 120)" data-style="hybrid" class="quote-style-btn p-4 rounded-xl border text-left transition-all bg-amberFlare/15 border-amberFlare">
+                <div class="flex items-center justify-between">
+                  <span class="font-cinema text-xl tracking-wide text-white">HÍBRIDO 3D+2D</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amberFlare text-white">SIGNATURE</span>
+                </div>
+                <div class="font-mono text-[11px] text-slate-300 mt-0.5">Estética Spider-Verse</div>
+                <div class="font-mono text-xs text-amberWarm mt-2">$120 / seg</div>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <label for="duration-slider" class="font-mono text-xs uppercase tracking-widest text-slate-300">02. Metraje / Duración</label>
+              <span id="duration-display" class="font-cinema text-2xl tracking-wider text-amberWarm bg-abyss px-3.5 py-1 rounded border border-white/10">
+                30 SEGUNDOS
+              </span>
+            </div>
+            <input id="duration-slider" type="range" min="5" max="120" step="5" value="30" oninput="updateQuote()" class="w-full cursor-pointer" />
+            <div class="flex justify-between font-mono text-[10px] text-slate-500 mt-2">
+              <span>5s (Teaser / Loop)</span>
+              <span>30s (Trailer / Spot)</span>
+              <span>60s (Opening)</span>
+              <span>120s (Videoclip)</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-mono text-xs uppercase tracking-widest text-slate-300 mb-3">03. Departamentos Adicionales</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="flex items-start gap-3 p-3.5 rounded-xl bg-abyss border border-white/10 hover:border-amberFlare/40 cursor-pointer transition-all">
+                <input type="checkbox" id="extra-characters" onchange="updateQuote()" class="mt-1 accent-amberFlare w-4 h-4" checked />
+                <div>
+                  <div class="font-medium text-sm text-white">Arte Conceptual &amp; Personajes</div>
+                  <div class="font-mono text-[11px] text-slate-400">Model sheets &amp; lookdev (+$500)</div>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-3 p-3.5 rounded-xl bg-abyss border border-white/10 hover:border-amberFlare/40 cursor-pointer transition-all">
+                <input type="checkbox" id="extra-sfx" onchange="updateQuote()" class="mt-1 accent-amberFlare w-4 h-4" checked />
+                <div>
+                  <div class="font-medium text-sm text-white">Diseño Sonoro &amp; Score Atmosférico</div>
+                  <div class="font-mono text-[11px] text-slate-400">Foley cinematográfico (+$400)</div>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-3 p-3.5 rounded-xl bg-abyss border border-white/10 hover:border-amberFlare/40 cursor-pointer transition-all">
+                <input type="checkbox" id="extra-4k" onchange="updateQuote()" class="mt-1 accent-amberFlare w-4 h-4" />
+                <div>
+                  <div class="font-medium text-sm text-white">Master 4K DCI + Stems</div>
+                  <div class="font-mono text-[11px] text-slate-400">Entrega sin compresión (+$350)</div>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-3 p-3.5 rounded-xl bg-abyss border border-white/10 hover:border-iceCyan/40 cursor-pointer transition-all">
+                <input type="checkbox" id="extra-rush" onchange="updateQuote()" class="mt-1 accent-iceCyan w-4 h-4" />
+                <div>
+                  <div class="font-medium text-sm text-iceCyan">Calendario Acelerado (Rush)</div>
+                  <div class="font-mono text-[11px] text-slate-400">Prioridad de estudio (+25%)</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen de presupuesto estimado -->
+        <div class="lg:col-span-5 cinema-frame rounded-2xl p-6 sm:p-8 border-amberFlare/30">
+          <div class="flex items-center justify-between pb-4 border-b border-white/10 font-mono text-xs">
+            <span class="text-amberWarm tracking-widest">// HOJA DE PRODUCCIÓN</span>
+            <span class="text-slate-400">ESTIMADO USD</span>
+          </div>
+
+          <div class="py-6 space-y-5">
+            <div>
+              <div class="text-xs font-mono text-slate-400 uppercase tracking-wider">Inversión Total Estimada</div>
+              <div id="quote-total-price" class="font-cinema text-5xl sm:text-6xl tracking-wide text-white mt-1">
+                $4,500 <span class="text-lg font-mono font-normal text-amberWarm">USD</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">
+                *Sujeto a revisión de guion técnico, número de planos y complejidad de personajes.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 p-4 rounded-xl bg-abyss border border-white/10 font-mono">
+              <div>
+                <div class="text-[10px] text-slate-400">TIEMPO DE RODAJE/RENDER</div>
+                <div id="quote-weeks" class="text-base font-semibold text-iceCyan mt-0.5">4 - 5 Semanas</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-400">FORMATO</div>
+                <div id="quote-style-label" class="text-sm font-semibold text-amberWarm mt-1">Híbrido 3D+2D</div>
+              </div>
+            </div>
+
+            <div id="quote-breakdown" class="space-y-2 font-mono text-xs text-slate-300 border-t border-white/10 pt-4"></div>
+          </div>
+
+          <button type="button" onclick="sendQuoteToContact()" class="w-full py-4 px-6 rounded-xl bg-amberFlare hover:bg-amberWarm text-white font-mono text-xs font-semibold uppercase tracking-widest transition-all shadow-lg shadow-amberFlare/25 flex items-center justify-center gap-2">
+            <span>Adjuntar Presupuesto al Briefing</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. CONTACTO DIRECTO & CRÉDITOS DE CIERRE -->
+    <section id="creditos" class="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/[0.07] transition-opacity duration-500">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div class="lg:col-span-5 space-y-6">
+          <div>
+            <span class="font-mono text-xs tracking-[0.25em] text-iceCyan uppercase">// PRODUCCIÓN EJECUTIVA</span>
+            <h2 class="font-cinema text-4xl sm:text-6xl tracking-wider text-white mt-1">INICIA TU PRODUCCIÓN</h2>
+            <p class="text-slate-400 mt-3 text-sm sm:text-base font-light leading-relaxed">
+              ¿Listo para llevar tu videoclip, videojuego o campaña a una escala cinematográfica? Contáctanos directamente.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <a id="whatsapp-direct-btn" href="https://wa.me/15550192834?text=Hola%20Automata%20Solid,%20me%20gustar%C3%ADa%20conversar%20sobre%20una%20producci%C3%B3n%20animada" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-4 rounded-xl bg-charcoal border border-white/10 hover:border-emerald-400/60 transition-all group">
+              <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-emerald-400 font-mono text-xs font-bold">
+                  WA
+                </div>
+                <div>
+                  <div class="font-medium text-sm text-white">Línea Directa WhatsApp</div>
+                  <div class="font-mono text-xs text-slate-400">Productor Ejecutivo disponible</div>
+                </div>
+              </div>
+              <span class="font-mono text-xs text-emerald-400 group-hover:translate-x-1 transition-transform">CONECTAR -&gt;</span>
+            </a>
+
+            <button type="button" onclick="copyStudioEmail()" class="w-full flex items-center justify-between p-4 rounded-xl bg-charcoal border border-white/10 hover:border-amberFlare/60 transition-all group text-left">
+              <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-lg bg-amberFlare/15 border border-amberFlare/30 flex items-center justify-center text-amberWarm font-mono text-sm font-bold">
+                  @
+                </div>
+                <div>
+                  <div class="font-medium text-sm text-white">produccion@automatasolid.film</div>
+                  <div class="font-mono text-xs text-slate-400">Clic para copiar correo oficial</div>
+                </div>
+              </div>
+              <span class="font-mono text-xs text-amberWarm">COPIAR</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 cinema-frame rounded-2xl p-6 sm:p-8">
+          <form id="contact-form" onsubmit="handleContactSubmit(event)" class="space-y-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-mono text-[11px] uppercase tracking-wider text-slate-400 mb-1.5">Nombre / Estudio / Sello *</label>
+                <input type="text" required placeholder="Ej. Elena Rostova / Aether Games" class="w-full px-4 py-3 rounded-xl bg-abyss border border-white/10 focus:border-amberFlare focus:outline-none text-white text-sm" />
+              </div>
+              <div>
+                <label class="block font-mono text-[11px] uppercase tracking-wider text-slate-400 mb-1.5">Correo Electrónico *</label>
+                <input type="email" required placeholder="elena@estudio.com" class="w-full px-4 py-3 rounded-xl bg-abyss border border-white/10 focus:border-amberFlare focus:outline-none text-white text-sm" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-mono text-[11px] uppercase tracking-wider text-slate-400 mb-1.5">Formato de Producción</label>
+              <select class="w-full px-4 py-3 rounded-xl bg-abyss border border-white/10 focus:border-amberFlare focus:outline-none text-white text-sm">
+                <option value="Híbrido 3D+2D">Cortometraje / Pieza Híbrida 3D + 2D</option>
+                <option value="Trailer">Trailer Cinemático de Videojuego</option>
+                <option value="Videoclip">Videoclip Musical Neo-Noir</option>
+                <option value="Comercial">Comercial / Campaña de Marca</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-mono text-[11px] uppercase tracking-wider text-slate-400 mb-1.5">Guion / Sinopsis / Presupuesto *</label>
+              <textarea id="contact-message" rows="4" required placeholder="Describe la atmósfera, duración estimada, referencias cinematográficas o fecha de estreno..." class="w-full px-4 py-3 rounded-xl bg-abyss border border-white/10 focus:border-amberFlare focus:outline-none text-white text-sm"></textarea>
+            </div>
+
+            <button type="submit" class="w-full py-4 px-6 rounded-xl bg-amberFlare hover:bg-amberWarm text-white font-mono text-xs font-semibold uppercase tracking-widest transition-all shadow-lg shadow-amberFlare/20">
+              Enviar Briefing a Producción
+            </button>
+          </form>
+
+          <div id="contact-success" class="hidden text-center py-10 space-y-4">
+            <div class="w-14 h-14 rounded-full bg-amberFlare/20 border border-amberFlare text-amberWarm flex items-center justify-center mx-auto font-cinema text-2xl tracking-wider">
+              REC
+            </div>
+            <h3 class="font-cinema text-3xl tracking-wider text-white">BRIEFING REGISTRADO EN SISTEMA</h3>
+            <p class="text-slate-400 text-sm max-w-md mx-auto">
+              El equipo de producción de <span class="studio-name-text text-white font-semibold">AUTOMATA SOLID</span> analizará tu propuesta y te contactará en menos de 24 horas.
+            </p>
+            <button type="button" onclick="resetContactForm()" class="px-5 py-2 rounded-lg bg-charcoal border border-white/15 hover:border-amberFlare font-mono text-xs text-slate-200">
+              Enviar otro briefing
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bloque de créditos finales del estudio -->
+      <footer class="mt-24 pt-12 border-t border-white/[0.06] text-center space-y-4">
+        <div class="anamorphic-flare-cyan w-48 mx-auto opacity-60"></div>
+        <div class="font-cinema text-3xl sm:text-4xl tracking-[0.25em] text-white studio-name-text">
+          AUTOMATA SOLID
+        </div>
+        <p class="font-mono text-[10px] sm:text-[11px] tracking-[0.22em] text-slate-500 uppercase max-w-3xl mx-auto leading-relaxed">
+          DIRECTED &amp; ANIMATED IN HYBRID 3D-2D · COLOR GRADED IN ACEScg · ANAMORPHIC 2.39:1 SCOPE · BLENDER · UNREAL ENGINE 5 · TOON BOOM HARMONY · NUKE STUDIO
+        </p>
+        <div class="font-mono text-[10px] text-slate-600 pt-2">
+          © 2026 <span class="studio-name-text">AUTOMATA SOLID</span>. TODOS LOS DERECHOS RESERVADOS.
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <!-- MODAL 1: EDITAR NOMBRE DEL ESTUDIO EN VIVO -->
+  <div id="name-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 backdrop-blur-md p-4">
+    <div class="cinema-frame rounded-2xl max-w-md w-full p-6 space-y-4 border-amberFlare/50">
+      <div class="flex items-center justify-between">
+        <h3 class="font-cinema text-2xl tracking-wider text-white">EDITAR NOMBRE DEL ESTUDIO</h3>
+        <button type="button" onclick="closeNameModal()" class="text-slate-400 hover:text-white font-mono text-sm">✕</button>
+      </div>
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Cambia el nombre en vivo para previsualizar cómo luce en la cabecera, los formularios y los créditos finales:
+      </p>
+      <input type="text" id="new-studio-name-input" value="AUTOMATA SOLID" maxlength="28" class="w-full px-4 py-3 rounded-xl bg-abyss border border-amberFlare/50 focus:outline-none font-cinema text-2xl tracking-widest text-white uppercase" />
+      <div class="flex flex-wrap gap-2">
+        <button type="button" onclick="quickSetName('AUTOMATA SOLID')" class="px-2.5 py-1 rounded bg-charcoal border border-white/10 text-[11px] font-mono text-slate-300 hover:text-amberWarm">AUTOMATA SOLID</button>
+        <button type="button" onclick="quickSetName('KITSUNE PICTURES')" class="px-2.5 py-1 rounded bg-charcoal border border-white/10 text-[11px] font-mono text-slate-300 hover:text-amberWarm">KITSUNE PICTURES</button>
+        <button type="button" onclick="quickSetName('NOIR-FRAME LABS')" class="px-2.5 py-1 rounded bg-charcoal border border-white/10 text-[11px] font-mono text-slate-300 hover:text-amberWarm">NOIR-FRAME LABS</button>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeNameModal()" class="px-4 py-2 rounded-lg bg-charcoal text-xs font-mono text-slate-400">Cancelar</button>
+        <button type="button" onclick="applyStudioName()" class="px-5 py-2 rounded-lg bg-amberFlare text-white font-mono text-xs font-semibold uppercase">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: DESGLOSE DE DIRECCIÓN DEL PROYECTO -->
+  <div id="project-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/90 backdrop-blur-lg p-4">
+    <div class="cinema-frame rounded-2xl max-w-3xl w-full p-6 sm:p-8 space-y-5 border-amberFlare/40 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <span id="modal-project-tag" class="font-mono text-xs tracking-widest text-amberWarm uppercase">DIRECTOR'S BREAKDOWN</span>
+          <h3 id="modal-project-title" class="font-cinema text-3xl sm:text-4xl tracking-wider text-white mt-1">ASHES OF NEO-KYOTO</h3>
+        </div>
+        <button type="button" onclick="closeProjectModal()" class="p-2 rounded-lg bg-charcoal border border-white/10 text-slate-300 hover:text-white font-mono">✕</button>
+      </div>
+
+      <div id="modal-project-art" class="w-full aspect-anamorphic rounded-xl overflow-hidden border border-white/15 bg-abyss relative"></div>
+
+      <p id="modal-project-desc" class="text-slate-300 text-sm leading-relaxed font-light"></p>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-abyss border border-white/10 font-mono text-xs">
+        <div>
+          <div class="text-slate-500 text-[10px]">PIPELINE</div>
+          <div id="modal-project-soft" class="text-white font-semibold mt-0.5">Blender + Grease Pencil</div>
+        </div>
+        <div>
+          <div class="text-slate-500 text-[10px]">CADENCIA</div>
+          <div id="modal-project-fps" class="text-iceCyan font-semibold mt-0.5">24 FPS (On 2s)</div>
+        </div>
+        <div>
+          <div class="text-slate-500 text-[10px]">METRAJE</div>
+          <div id="modal-project-dur" class="text-amberWarm font-semibold mt-0.5">02:10 MIN</div>
+        </div>
+        <div>
+          <div class="text-slate-500 text-[10px]">PRODUCCIÓN</div>
+          <div id="modal-project-client" class="text-slate-200 font-semibold mt-0.5">Kurogane Films</div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" onclick="closeProjectModal()" class="px-4 py-2.5 rounded-xl bg-charcoal border border-white/10 text-xs font-mono text-slate-300 hover:text-white">Cerrar</button>
+        <button type="button" onclick="quoteSimilarProject()" class="px-5 py-2.5 rounded-xl bg-amberFlare hover:bg-amberWarm text-white font-mono text-xs font-semibold uppercase">Cotizar Producción Similar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Catálogo de piezas de animación para la filmografía filtrable
+    const projectsData = [
+      {
+        id: 'ashes-neo-kyoto',
+        title: 'ASHES OF NEO-KYOTO',
+        category: 'hybrid',
+        categoryLabel: 'Híbrido 3D + 2D',
+        software: 'Blender + Grease Pencil + Nuke',
+        fps: '24 FPS (On 2s)',
+        duration: '02:10',
+        client: 'Kurogane Films',
+        desc: 'Cortometraje neo-noir ambientado en azoteas lluviosas iluminadas por destellos ámbar. Entornos arquitectónicos 3D con óptica anamórfica y acción animada cuadro a cuadro en 2D.',
+        svg: `<svg viewBox="0 0 478 200" class="w-full h-full object-cover" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="noir1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#050608"/>
+              <stop offset="55%" stop-color="#191013"/>
+              <stop offset="100%" stop-color="#FF5E1A" stop-opacity="0.45"/>
+            </linearGradient>
+            <radialGradient id="amberGlow" cx="72%" cy="42%" r="40%">
+              <stop offset="0%" stop-color="#FF9E44" stop-opacity="0.6"/>
+              <stop offset="100%" stop-color="#050608" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="478" height="200" fill="url(#noir1)"/>
+          <rect width="478" height="200" fill="url(#amberGlow)"/>
+          <rect x="40" y="35" width="55" height="165" fill="#0B0D12" stroke="#1E293B" stroke-width="1"/>
+          <rect x="110" y="65" width="70" height="135" fill="#080A0E" stroke="#38BDF8" stroke-opacity="0.25" stroke-width="1"/>
+          <circle cx="345" cy="84" r="38" fill="#FF5E1A" opacity="0.28"/>
+          <line x1="210" y1="84" x2="478" y2="84" stroke="#FF9E44" stroke-width="1.5" opacity="0.75"/>
+          <path d="M 140 155 L 385 48" stroke="#E2E8F0" stroke-width="3" stroke-linecap="round"/>
+          <path d="M 145 160 L 370 60" stroke="#FF5E1A" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="20" y="24" fill="#94A3B8" font-family="monospace" font-size="9" letter-spacing="2">SCENE 01 // ANAMORPHIC 2.39:1</text>
+        </svg>`,
+      },
+      {
+        id: 'eclipse-protocol',
+        title: 'ECLIPSE PROTOCOL // TRAILER',
+        category: '3d',
+        categoryLabel: 'Cinemática 3D',
+        software: 'Unreal Engine 5 + Houdini',
+        fps: '24 FPS Cinematic',
+        duration: '01:30',
+        client: 'Vanguard Interactive',
+        desc: 'Trailer de anuncio para título de ciencia ficción. Iluminación volumétrica densa, simulación de humo y escombros en Houdini, y composición cinematográfica en ACEScg.',
+        svg: `<svg viewBox="0 0 478 200" class="w-full h-full object-cover" xmlns="http://www.w3.org/2000/svg">
+          <rect width="478" height="200" fill="#06080D"/>
+          <circle cx="239" cy="100" r="64" fill="#0B0F19" stroke="#38BDF8" stroke-width="2" stroke-opacity="0.7"/>
+          <circle cx="239" cy="100" r="61" fill="none" stroke="#FF5E1A" stroke-width="3" stroke-dasharray="65 140"/>
+          <line x1="40" y1="100" x2="438" y2="100" stroke="#38BDF8" stroke-width="1.2" opacity="0.6"/>
+          <polygon points="180,175 239,120 298,175" fill="#0D111A" stroke="#E2E8F0" stroke-opacity="0.3"/>
+          <text x="20" y="24" fill="#38BDF8" font-family="monospace" font-size="9" letter-spacing="2">UE5 PATH TRACER // ACEScg</text>
+        </svg>`,
+      },
+      {
+        id: 'redline-syndicate',
+        title: 'REDLINE SYNDICATE',
+        category: '2d',
+        categoryLabel: 'Anime / Cel-Shading',
+        software: 'Toon Boom Harmony + Clip Studio',
+        fps: '24 FPS (On 1s & 2s)',
+        duration: '01:15',
+        client: 'Noir Synth Records',
+        desc: 'Secuencia nocturna en autopista elevada. Animación 2D tradicional de alto ritmo con sombreado duro de contraste, luces trazadoras y atmósfera neo-noir.',
+        svg: `<svg viewBox="0 0 478 200" class="w-full h-full object-cover" xmlns="http://www.w3.org/2000/svg">
+          <rect width="478" height="200" fill="#0C0709"/>
+          <path d="M 0 140 L 478 115 L 478 200 L 0 200 Z" fill="#120B0E"/>
+          <line x1="0" y1="132" x2="478" y2="108" stroke="#FF5E1A" stroke-width="2.5"/>
+          <line x1="40" y1="145" x2="290" y2="132" stroke="#FF9E44" stroke-width="1.5" opacity="0.7"/>
+          <polygon points="240,122 310,98 375,105 390,120" fill="#E2E8F0"/>
+          <circle cx="275" cy="122" r="14" fill="#050608" stroke="#FF5E1A" stroke-width="2.5"/>
+          <circle cx="365" cy="118" r="14" fill="#050608" stroke="#FF5E1A" stroke-width="2.5"/>
+          <text x="20" y="24" fill="#FF9E44" font-family="monospace" font-size="9" letter-spacing="2">HAND-DRAWN KEY ANIMATION</text>
+        </svg>`,
+      },
+      {
+        id: 'ghost-optics',
+        title: 'GHOST OPTICS // TITLE SEQUENCE',
+        category: 'vfx',
+        categoryLabel: 'VFX & LookDev',
+        software: 'Cinema 4D + Octane + Nuke',
+        fps: '24 FPS',
+        duration: '00:55',
+        client: 'Aether Originals',
+        desc: 'Secuencia de títulos iniciales para serie distópica. Macro-visualización de componentes ópticos, destellos anamórficos y composición de alta precisión.',
+        svg: `<svg viewBox="0 0 478 200" class="w-full h-full object-cover" xmlns="http://www.w3.org/2000/svg">
+          <rect width="478" height="200" fill="#07090E"/>
+          <circle cx="239" cy="100" r="52" fill="none" stroke="#E2E8F0" stroke-opacity="0.2" stroke-width="1"/>
+          <circle cx="239" cy="100" r="34" fill="none" stroke="#38BDF8" stroke-width="1.5" stroke-dasharray="12 6"/>
+          <circle cx="239" cy="100" r="14" fill="#FF5E1A" opacity="0.85"/>
+          <line x1="90" y1="100" x2="388" y2="100" stroke="#FF9E44" stroke-width="1" opacity="0.6"/>
+          <text x="20" y="24" fill="#94A3B8" font-family="monospace" font-size="9" letter-spacing="2">MAIN TITLES // OPTICAL LOOKDEV</text>
+        </svg>`,
+      },
+    ];
+
+    let currentActiveProject = null;
+    let currentStudioName = 'AUTOMATA SOLID';
+
+    // Renderiza la galería filtrada de proyectos
+    function renderPortfolio(filter = 'all') {
+      const grid = document.getElementById('portfolio-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      const filtered = filter === 'all' ? projectsData : projectsData.filter((p) => p.category === filter);
+
+      filtered.forEach((proj) => {
+        const card = document.createElement('article');
+        card.className = 'cinema-frame rounded-2xl overflow-hidden flex flex-col cursor-pointer group';
+        card.onclick = () => openProjectModal(proj);
+
+        card.innerHTML = `
+          <div class="relative aspect-anamorphic bg-abyss overflow-hidden border-b border-white/[0.08]">
+            <div class="w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out">
+              ${proj.svg}
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-t from-abyss via-transparent to-transparent opacity-75"></div>
+            <span class="absolute top-3 right-3 px-2.5 py-1 rounded bg-black/75 backdrop-blur-md border border-white/15 font-mono text-[10px] tracking-wider text-amberWarm uppercase">
+              ${proj.categoryLabel}
+            </span>
+          </div>
+          <div class="p-6 flex-1 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="font-cinema text-2xl sm:text-3xl tracking-wider text-white group-hover:text-amberWarm transition-colors">
+                  ${proj.title}
+                </h3>
+                <span class="font-mono text-xs text-slate-500">${proj.duration}</span>
+              </div>
+              <p class="text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed font-light">
+                ${proj.desc}
+              </p>
+            </div>
+            <div class="pt-3 border-t border-white/[0.07] flex items-center justify-between font-mono text-[11px] text-slate-400">
+              <span>${proj.software}</span>
+              <span class="text-iceCyan group-hover:translate-x-1 transition-transform">BREAKDOWN -&gt;</span>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Actualiza el estado visual de los botones de filtro
+    function filterPortfolio(category) {
+      document.querySelectorAll('.filter-btn').forEach((btn) => {
+        if (btn.dataset.filter === category) {
+          btn.className = 'filter-btn px-4 py-2 rounded font-mono text-xs font-semibold bg-amberFlare text-white transition-all';
+        } else {
+          btn.className = 'filter-btn px-4 py-2 rounded font-mono text-xs bg-charcoal border border-white/10 text-slate-300 hover:border-amberFlare/50 transition-all';
+        }
+      });
+      renderPortfolio(category);
+    }
+
+    // Abre el modal de desglose técnico de un proyecto
+    function openProjectModal(proj) {
+      currentActiveProject = proj;
+      document.getElementById('modal-project-tag').textContent = `DIRECTOR'S BREAKDOWN // ${proj.categoryLabel}`;
+      document.getElementById('modal-project-title').textContent = proj.title;
+      document.getElementById('modal-project-art').innerHTML = proj.svg;
+      document.getElementById('modal-project-desc').textContent = proj.desc;
+      document.getElementById('modal-project-soft').textContent = proj.software;
+      document.getElementById('modal-project-fps').textContent = proj.fps;
+      document.getElementById('modal-project-dur').textContent = proj.duration;
+      document.getElementById('modal-project-client').textContent = proj.client;
+
+      const modal = document.getElementById('project-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeProjectModal() {
+      const modal = document.getElementById('project-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function quoteSimilarProject() {
+      if (!currentActiveProject) return;
+      closeProjectModal();
+      const mapStyle = { '2d': ['2d', 70], '3d': ['3d', 95], 'hybrid': ['hybrid', 120], vfx: ['hybrid', 120] };
+      const chosen = mapStyle[currentActiveProject.category] || ['hybrid', 120];
+      selectQuoteStyle(chosen[0], chosen[1]);
+      document.getElementById('cotizador').scrollIntoView({ behavior: 'smooth' });
+      showToast(`Presupuesto configurado según "${currentActiveProject.title}"`);
+    }
+
+    // Funciones de edición en vivo del nombre del estudio
+    function openNameModal() {
+      const modal = document.getElementById('name-modal');
+      const input = document.getElementById('new-studio-name-input');
+      input.value = currentStudioName;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      input.focus();
+    }
+
+    function closeNameModal() {
+      const modal = document.getElementById('name-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function quickSetName(name) {
+      document.getElementById('new-studio-name-input').value = name;
+    }
+
+    function applyStudioName() {
+      const raw = document.getElementById('new-studio-name-input').value.trim();
+      if (!raw) return;
+      currentStudioName = raw.toUpperCase();
+      document.getElementById('studio-name-display').textContent = currentStudioName;
+      document.querySelectorAll('.studio-name-text').forEach((el) => {
+        el.textContent = currentStudioName;
+      });
+      document.title = `${currentStudioName} - Casa de Animación Cinematográfica 3D & 2D`;
+
+      const waBtn = document.getElementById('whatsapp-direct-btn');
+      if (waBtn) {
+        waBtn.href = `https://wa.me/15550192834?text=${encodeURIComponent(`Hola ${currentStudioName}, me gustaría conversar sobre una producción animada`)}`;
+      }
+
+      closeNameModal();
+      showToast(`Nombre actualizado a "${currentStudioName}"`);
+    }
+
+    // Alterna el Modo Sala de Cine
+    function toggleTheaterMode() {
+      document.body.classList.toggle('theater-active');
+      if (document.body.classList.contains('theater-active')) {
+        document.getElementById('reel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    // Lógica del cotizador interactivo
+    let quoteState = {
+      style: 'hybrid',
+      ratePerSec: 120,
+      styleLabel: 'Híbrido 3D+2D',
+    };
+
+    function selectQuoteStyle(style, rate) {
+      quoteState.style = style;
+      quoteState.ratePerSec = rate;
+      const labels = {
+        '2d': '2D Anime / Cel',
+        '3d': 'Cinemática 3D',
+        hybrid: 'Híbrido 3D+2D',
+      };
+      quoteState.styleLabel = labels[style];
+
+      document.querySelectorAll('.quote-style-btn').forEach((btn) => {
+        if (btn.dataset.style === style) {
+          btn.className = 'quote-style-btn p-4 rounded-xl border text-left transition-all bg-amberFlare/15 border-amberFlare';
+        } else {
+          btn.className = 'quote-style-btn p-4 rounded-xl border text-left transition-all bg-charcoal border-white/10 hover:border-amberFlare/50';
+        }
+      });
+
+      updateQuote();
+    }
+
+    function updateQuote() {
+      const duration = parseInt(document.getElementById('duration-slider').value, 10);
+      document.getElementById('duration-display').textContent = `${duration} SEGUNDOS`;
+
+      const hasChars = document.getElementById('extra-characters').checked;
+      const hasSfx = document.getElementById('extra-sfx').checked;
+      const has4k = document.getElementById('extra-4k').checked;
+      const isRush = document.getElementById('extra-rush').checked;
+
+      const baseCost = duration * quoteState.ratePerSec;
+      let extrasCost = 0;
+      const breakdownLines = [
+        `<div class="flex justify-between"><span>Producción (${duration}s × $${quoteState.ratePerSec})</span><span>$${baseCost.toLocaleString()}</span></div>`,
+      ];
+
+      if (hasChars) {
+        extrasCost += 500;
+        breakdownLines.push(`<div class="flex justify-between text-slate-400"><span>+ Arte Conceptual &amp; Personajes</span><span>$500</span></div>`);
+      }
+      if (hasSfx) {
+        extrasCost += 400;
+        breakdownLines.push(`<div class="flex justify-between text-slate-400"><span>+ Diseño Sonoro &amp; Score</span><span>$400</span></div>`);
+      }
+      if (has4k) {
+        extrasCost += 350;
+        breakdownLines.push(`<div class="flex justify-between text-slate-400"><span>+ Master 4K DCI + Stems</span><span>$350</span></div>`);
+      }
+
+      let subtotal = baseCost + extrasCost;
+      if (isRush) {
+        const rushFee = Math.round(subtotal * 0.25);
+        subtotal += rushFee;
+        breakdownLines.push(`<div class="flex justify-between text-iceCyan"><span>+ Calendario Acelerado (25%)</span><span>$${rushFee.toLocaleString()}</span></div>`);
+      }
+
+      let baseWeeks = Math.max(2, Math.ceil(duration / 10) + (quoteState.style === 'hybrid' ? 2 : 1));
+      if (isRush) {
+        baseWeeks = Math.max(1, Math.round(baseWeeks * 0.7));
+      }
+
+      document.getElementById('quote-total-price').innerHTML = `$${subtotal.toLocaleString()} <span class="text-lg font-mono font-normal text-amberWarm">USD</span>`;
+      document.getElementById('quote-weeks').textContent = `${baseWeeks} - ${baseWeeks + 1} Semanas`;
+      document.getElementById('quote-style-label').textContent = quoteState.styleLabel;
+      document.getElementById('quote-breakdown').innerHTML = breakdownLines.join('');
+    }
+
+    function sendQuoteToContact() {
+      const duration = document.getElementById('duration-slider').value;
+      const totalText = document.getElementById('quote-total-price').innerText.replace('\n', ' ');
+      const weeksText = document.getElementById('quote-weeks').textContent;
+
+      const summary = `Hola ${currentStudioName}, me interesa producir una pieza con estos parámetros:\n• Técnica: ${quoteState.styleLabel}\n• Metraje: ${duration} segundos\n• Presupuesto estimado: ${totalText}\n• Calendario estimado: ${weeksText}\n\nSinopsis / Idea del proyecto: `;
+
+      document.getElementById('contact-message').value = summary;
+      document.getElementById('creditos').scrollIntoView({ behavior: 'smooth' });
+      showToast('Presupuesto adjuntado al formulario de contacto');
+    }
+
+    // Copiado al portapapeles compatible con iframes y envío de formulario
+    function copyStudioEmail() {
+      const email = 'produccion@automatasolid.film';
+      try {
+        const tempInput = document.createElement('input');
+        tempInput.value = email;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        showToast('Correo copiado: ' + email);
+      } catch (err) {
+        showToast('Correo oficial: ' + email);
+      }
+    }
+
+    function handleContactSubmit(e) {
+      e.preventDefault();
+      document.getElementById('contact-form').classList.add('hidden');
+      document.getElementById('contact-success').classList.remove('hidden');
+      showToast('Briefing enviado correctamente');
+    }
+
+    function resetContactForm() {
+      document.getElementById('contact-form').reset();
+      document.getElementById('contact-success').classList.add('hidden');
+      document.getElementById('contact-form').classList.remove('hidden');
+    }
+
+    function toggleMobileMenu() {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    }
+
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = 'px-4 py-3 rounded-xl bg-charcoal border border-amberFlare/60 text-white font-mono text-xs shadow-2xl flex items-center gap-2.5 transition-all';
+      toast.innerHTML = `<span class="w-2 h-2 rounded-full bg-amberFlare"></span><span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    // Control de reproducción y pases del visor cinematográfico en Canvas
+    let reelPlaying = true;
+    let reelLayer = 'final';
+    let reelFrame = 0;
+    const totalReelFrames = 360;
+
+    function setReelLayer(layer) {
+      reelLayer = layer;
+      const btns = {
+        final: document.getElementById('layer-final'),
+        clay: document.getElementById('layer-clay'),
+        ink: document.getElementById('layer-ink'),
+      };
+      const labels = {
+        final: 'LUT: KODAK 2383 // COMPOSITE 3D+2D',
+        clay: 'PASS: 3D VOLUMETRIC CLAY & LIGHTING',
+        ink: 'PASS: 2D HAND-DRAWN INK & SMEAR FRAMES',
+      };
+
+      Object.keys(btns).forEach((k) => {
+        if (k === layer) {
+          btns[k].className = 'px-3 py-1 rounded text-[11px] font-semibold bg-amberFlare text-white transition-all';
+        } else {
+          btns[k].className = 'px-3 py-1 rounded text-[11px] text-slate-400 hover:text-white transition-all';
+        }
+      });
+      document.getElementById('reel-pass-label').textContent = labels[layer];
+    }
+
+    function toggleReelPlay() {
+      reelPlaying = !reelPlaying;
+      document.getElementById('icon-pause').classList.toggle('hidden', !reelPlaying);
+      document.getElementById('icon-play').classList.toggle('hidden', reelPlaying);
+    }
+
+    function initCinemaCanvas() {
+      const canvas = document.getElementById('cinema-reel-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      function resize() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = Math.max(300, rect.width);
+        canvas.height = Math.max(150, rect.height);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      const rainDrops = Array.from({ length: 85 }, () => ({
+        x: Math.random() * 1400,
+        y: Math.random() * 600,
+        len: Math.random() * 18 + 10,
+        speed: Math.random() * 7 + 8,
+      }));
+
+      const bokehLights = Array.from({ length: 18 }, () => ({
+        x: Math.random(),
+        y: Math.random() * 0.75,
+        r: Math.random() * 14 + 4,
+        color: Math.random() > 0.35 ? '#FF5E1A' : '#38BDF8',
+        drift: (Math.random() - 0.5) * 0.0004,
+      }));
+
+      let clock = 0;
+
+      function render() {
+        clock += 0.02;
+
+        const totalSecs = Math.floor(clock);
+        const mins = String(Math.floor(totalSecs / 60) % 60).padStart(2, '0');
+        const secs = String(totalSecs % 60).padStart(2, '0');
+        const f24 = String(Math.floor((clock % 1) * 24)).padStart(2, '0');
+        const tcEl = document.getElementById('hud-timecode');
+        if (tcEl) {
+          tcEl.textContent = `24FPS // 01:${mins}:${secs}:${f24}`;
+        }
+
+        if (reelPlaying) {
+          reelFrame = (reelFrame + 1) % totalReelFrames;
+          const pct = (reelFrame / totalReelFrames) * 100;
+          document.getElementById('reel-progress-bar').style.width = `${pct}%`;
+          document.getElementById('reel-frame-counter').textContent = `FR ${String(reelFrame + 1).padStart(3, '0')} / ${totalReelFrames}`;
+        }
+
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w * 0.5;
+        const cy = h * 0.52;
+
+        if (reelLayer === 'ink') {
+          ctx.fillStyle = '#F1F5F9';
+          ctx.fillRect(0, 0, w, h);
+        } else if (reelLayer === 'clay') {
+          const clayGrad = ctx.createRadialGradient(cx, cy * 0.8, 20, cx, cy, w * 0.7);
+          clayGrad.addColorStop(0, '#272B36');
+          clayGrad.addColorStop(1, '#0D0F14');
+          ctx.fillStyle = clayGrad;
+          ctx.fillRect(0, 0, w, h);
+        } else {
+          const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+          bgGrad.addColorStop(0, '#050609');
+          bgGrad.addColorStop(0.55, '#120D10');
+          bgGrad.addColorStop(1, '#06090F');
+          ctx.fillStyle = bgGrad;
+          ctx.fillRect(0, 0, w, h);
+
+          const volLight = ctx.createRadialGradient(w * 0.68, h * 0.44, 10, w * 0.68, h * 0.44, w * 0.42);
+          volLight.addColorStop(0, 'rgba(255, 110, 35, 0.36)');
+          volLight.addColorStop(0.5, 'rgba(255, 94, 26, 0.12)');
+          volLight.addColorStop(1, 'rgba(5, 6, 8, 0)');
+          ctx.fillStyle = volLight;
+          ctx.fillRect(0, 0, w, h);
+
+          const rimGlow = ctx.createRadialGradient(w * 0.25, h * 0.35, 10, w * 0.25, h * 0.35, w * 0.35);
+          rimGlow.addColorStop(0, 'rgba(56, 189, 248, 0.18)');
+          rimGlow.addColorStop(1, 'rgba(5, 6, 8, 0)');
+          ctx.fillStyle = rimGlow;
+          ctx.fillRect(0, 0, w, h);
+        }
+
+        if (reelLayer === 'final') {
+          bokehLights.forEach((b) => {
+            b.x = (b.x + b.drift + 1) % 1;
+            ctx.fillStyle = b.color;
+            ctx.globalAlpha = 0.12;
+            ctx.beginPath();
+            ctx.ellipse(b.x * w, b.y * h, b.r * 0.65, b.r * 1.35, 0, 0, Math.PI * 2);
+            ctx.fill();
+          });
+          ctx.globalAlpha = 1;
+        }
+
+        const horizonY = h * 0.74;
+        const buildings = [
+          { x: 0.08, bw: 0.09, bh: 0.42 },
+          { x: 0.20, bw: 0.07, bh: 0.28 },
+          { x: 0.64, bw: 0.11, bh: 0.48 },
+          { x: 0.79, bw: 0.08, bh: 0.34 },
+          { x: 0.89, bw: 0.07, bh: 0.25 },
+        ];
+
+        buildings.forEach((b) => {
+          const bx = b.x * w;
+          const bw = b.bw * w;
+          const bh = b.bh * h;
+          const by = horizonY - bh;
+
+          if (reelLayer === 'ink') {
+            ctx.strokeStyle = '#0F172A';
+            ctx.lineWidth = 1.2;
+            ctx.strokeRect(bx, by, bw, bh);
+          } else if (reelLayer === 'clay') {
+            ctx.fillStyle = '#1B1F29';
+            ctx.fillRect(bx, by, bw, bh);
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+            ctx.strokeRect(bx, by, bw, bh);
+          } else {
+            ctx.fillStyle = '#080A0F';
+            ctx.fillRect(bx, by, bw, bh);
+            ctx.strokeStyle = 'rgba(255, 158, 68, 0.22)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(bx, by, bw, bh);
+          }
+        });
+
+        ctx.fillStyle = reelLayer === 'ink' ? '#E2E8F0' : reelLayer === 'clay' ? '#14171F' : '#040507';
+        ctx.fillRect(0, horizonY, w, h - horizonY);
+
+        ctx.strokeStyle = reelLayer === 'ink' ? '#94A3B8' : 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY);
+        ctx.lineTo(w, horizonY);
+        ctx.stroke();
+
+        const camBobY = Math.sin(reelFrame * 0.03) * 5;
+        const unitX = cx;
+        const unitY = cy - 6 + camBobY;
+        const scale = Math.min(w, h) * 0.22;
+        const rot = reelFrame * 0.022;
+
+        const pts3D = [
+          [0, -1.25, 0],
+          [0.95, 0, 0.95],
+          [0.95, 0, -0.95],
+          [-0.95, 0, -0.95],
+          [-0.95, 0, 0.95],
+          [0, 1.25, 0],
+        ];
+        const faces = [
+          [0, 1, 2],
+          [0, 2, 3],
+          [0, 3, 4],
+          [0, 4, 1],
+          [5, 2, 1],
+          [5, 3, 2],
+          [5, 4, 3],
+          [5, 1, 4],
+        ];
+
+        const proj = pts3D.map(([x, y, z]) => {
+          const rx = x * Math.cos(rot) - z * Math.sin(rot);
+          const rz = z * Math.cos(rot) + x * Math.sin(rot);
+          const persp = 3.5 / (3.5 + rz);
+          return [unitX + rx * scale * persp, unitY + y * scale * persp, rz];
+        });
+
+        faces.forEach(([a, b, c], idx) => {
+          ctx.beginPath();
+          ctx.moveTo(proj[a][0], proj[a][1]);
+          ctx.lineTo(proj[b][0], proj[b][1]);
+          ctx.lineTo(proj[c][0], proj[c][1]);
+          ctx.closePath();
+
+          if (reelLayer === 'ink') {
+            ctx.fillStyle = idx % 2 === 0 ? '#FFFFFF' : '#E2E8F0';
+            ctx.fill();
+            ctx.strokeStyle = '#050608';
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+          } else if (reelLayer === 'clay') {
+            ctx.fillStyle = idx % 2 === 0 ? '#3A404F' : '#262A36';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          } else {
+            ctx.fillStyle = idx % 2 === 0 ? 'rgba(15, 19, 28, 0.92)' : 'rgba(28, 20, 22, 0.92)';
+            ctx.fill();
+            ctx.strokeStyle = idx % 2 === 0 ? 'rgba(56, 189, 248, 0.7)' : 'rgba(255, 94, 26, 0.8)';
+            ctx.lineWidth = 1.4;
+            ctx.stroke();
+          }
+        });
+
+        const slashPhase = (reelFrame * 0.065) % (Math.PI * 2);
+        ctx.save();
+        ctx.translate(unitX, unitY);
+        ctx.rotate(-0.22);
+
+        ctx.strokeStyle = reelLayer === 'ink' ? '#FF5E1A' : reelLayer === 'clay' ? '#94A3B8' : '#FF9E44';
+        ctx.lineWidth = reelLayer === 'ink' ? 3.5 : 3;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, scale * 1.65, scale * 0.42, 0, slashPhase, slashPhase + 1.8);
+        ctx.stroke();
+
+        if (reelLayer === 'final' && Math.sin(slashPhase) > 0.3) {
+          const flareGrad = ctx.createLinearGradient(-scale * 2.5, 0, scale * 2.5, 0);
+          flareGrad.addColorStop(0, 'rgba(255, 94, 26, 0)');
+          flareGrad.addColorStop(0.5, 'rgba(255, 180, 100, 0.85)');
+          flareGrad.addColorStop(1, 'rgba(255, 94, 26, 0)');
+          ctx.fillStyle = flareGrad;
+          ctx.fillRect(-scale * 2.5, -1, scale * 5, 2);
+        }
+        ctx.restore();
+
+        ctx.strokeStyle = reelLayer === 'ink' ? 'rgba(15, 23, 42, 0.22)' : 'rgba(226, 232, 240, 0.22)';
+        ctx.lineWidth = 1;
+        rainDrops.forEach((drop) => {
+          if (reelPlaying) {
+            drop.y += drop.speed;
+            drop.x -= drop.speed * 0.18;
+            if (drop.y > h) {
+              drop.y = -20;
+              drop.x = Math.random() * (w + 150);
+            }
+          }
+          ctx.beginPath();
+          ctx.moveTo(drop.x, drop.y);
+          ctx.lineTo(drop.x - drop.len * 0.18, drop.y + drop.len);
+          ctx.stroke();
+        });
+
+        requestAnimationFrame(render);
+      }
+
+      render();
+    }
+
+    // Inicialización al cargar la ventana
+    window.onload = function () {
+      try {
+        renderPortfolio('all');
+        updateQuote();
+        initCinemaCanvas();
+      } catch (err) {
+        showToast('Error al inicializar la escena');
+      }
+    };
+  </script>
+</body>
+</html>
